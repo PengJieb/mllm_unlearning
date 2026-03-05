@@ -532,7 +532,7 @@ class Qwen3VLUnlearnTrainer(Trainer):
         updated_forget_activations = self.forward_with_cache(model, forget_batch, module=self.updated_lora_modules, no_grad=False).to(self.model.device)
 
         batch_size, seq_len, _ = updated_forget_activations.shape
-        expanded_control_vector = self.control_vector.broadcast_to(batch_size, seq_len, -1)
+        expanded_control_vector = self.control_vector.to(updated_forget_activations.device).broadcast_to(batch_size, seq_len, -1)
 
         unlearn_loss = torch.nn.functional.mse_loss(updated_forget_activations, expanded_control_vector)
         return unlearn_loss
