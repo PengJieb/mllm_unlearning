@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export CUDA_VISIBLE_DEVICES=2,3
+export CUDA_VISIBLE_DEVICES=2,3,4,5
 export HOME=/playpen-shared/pengjie
 export NCCL_P2P_DISABLE=1
 PROJ_ROOT="$PWD"
@@ -25,7 +25,7 @@ deepspeed --master_port 29502 qwen3vl_train/train_unlearn.py \
     --num_train_epochs 10 \
     --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 2 \
+    --gradient_accumulation_steps 1 \
     --save_strategy "steps" \
     --save_steps 50000 \
     --save_total_limit 1 \

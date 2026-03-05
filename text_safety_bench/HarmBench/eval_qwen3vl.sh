@@ -2,10 +2,10 @@
 
 # Qwen3-VL HarmBench Evaluation Script
 export HOME=/playpen-shared/pengjie
-MODEL_PATH="Qwen/Qwen3-VL-8B-Instruct"
-MODEL_ID="qwen3-vl-8b"
+MODEL_PATH="Qwen/Qwen3-VL-2B-Instruct"
+MODEL_ID="qwen3-vl-2b"
 GPU=0
-
+cd text_safety_bench/HarmBench
 BEHAVIORS_PATH="data/behavior_datasets/harmbench_behaviors_text_all.csv"
 TEST_CASES_PATH="data/test_cases/direct_request.json"
 COMPLETIONS_PATH="data/completions/${MODEL_ID}_direct_request.json"

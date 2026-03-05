@@ -395,10 +395,10 @@ def make_supervised_data_module(processor, data_args) -> Dict:
     )
 
     # Sample retain data
-    # retain_dataset.list_data_dict = random.sample(retain_dataset.list_data_dict, len(retain_dataset.list_data_dict))
+    retain_dataset.list_data_dict = random.sample(retain_dataset.list_data_dict, len(retain_dataset.list_data_dict))
     
-    retain_dataset.list_data_dict = random.sample(retain_dataset.list_data_dict, 4)
-    forget_dataset.list_data_dict = random.sample(forget_dataset.list_data_dict, 4)
+    # retain_dataset.list_data_dict = random.sample(retain_dataset.list_data_dict, 4)
+    # forget_dataset.list_data_dict = random.sample(forget_dataset.list_data_dict, 4)
     
     data_collator = DataCollatorForQwen3VL(processor=processor)
     return dict(

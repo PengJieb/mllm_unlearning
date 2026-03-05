@@ -1,4 +1,8 @@
 import argparse
+import os, sys
+
+sys.path.append('/playpen-shared/pengjie/mllm_unlearning_safety_alignment/VLM-Safety-Unlearn')
+
 from llava.model.builder import load_pretrained_model
 from llava.mm_utils import get_model_name_from_path
 
