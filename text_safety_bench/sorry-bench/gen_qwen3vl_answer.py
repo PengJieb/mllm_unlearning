@@ -10,7 +10,7 @@ import time
 import shortuuid
 import torch
 from tqdm import tqdm
-from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+from transformers import AutoModelForVision2Seq, AutoProcessor
 from qwen_vl_utils import process_vision_info
 
 
@@ -42,8 +42,8 @@ def run_eval(
         questions = [q for q in questions if q["question_id"] not in answered_ids]
         print(f"Remaining questions: {len(questions)}")
 
-    # Load model (Qwen3-VL uses same architecture as Qwen2VL)
-    model = Qwen2VLForConditionalGeneration.from_pretrained(
+    # Load model using AutoModelForVision2Seq to support Qwen3-VL architecture
+    model = AutoModelForVision2Seq.from_pretrained(
         model_path,
         torch_dtype=torch.bfloat16,
         device_map="auto" if num_gpus > 1 else "cuda:0"
