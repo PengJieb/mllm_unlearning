@@ -368,6 +368,14 @@ class Qwen3VLUnlearnTrainer(Trainer):
 
                 loss = total_loss + self.args.rmu_llava_loss_weight * llava_loss
 
+                # Track per-forward-pass components for separate backward calls
+                # (avoids DeepSpeed ZeRO-2 "gradient computed twice" with LoRA)
+                backward_components = [unlearn_loss]
+                if self.args.rmu_retain_alpha != 0:
+                    backward_components.append(retain_loss)
+                if self.args.rmu_llava_loss_weight != 0:
+                    backward_components.append(self.args.rmu_llava_loss_weight * llava_loss)
+
                 if self.loss_dir:
                     loss_entry = {
                         "step": self.state.global_step,
@@ -475,6 +483,14 @@ class Qwen3VLUnlearnTrainer(Trainer):
 
                 loss = npo_loss + self.args.npo_llava_loss_weight * llava_loss
 
+                # Track per-forward-pass components for separate backward calls
+                # (avoids DeepSpeed ZeRO-2 "gradient computed twice" with LoRA)
+                backward_components = [forget_npo_loss]
+                if self.args.npo_retain_alpha != 0:
+                    backward_components.append(retain_npo_loss)
+                if self.args.npo_llava_loss_weight != 0:
+                    backward_components.append(self.args.npo_llava_loss_weight * llava_loss)
+
                 if self.loss_dir:
                     loss_entry = {
                         "step": self.state.global_step,
@@ -495,14 +511,19 @@ class Qwen3VLUnlearnTrainer(Trainer):
                     print(f"Step {self.state.global_step}: Total Loss={loss}, Standard Loss={llava_loss}, Unlearn PO Loss={forget_npo_loss}, Retain PO Loss={retain_npo_loss}")
 
             elif self.args.unlearn_type == "grad-diff":
-                pass
+                backward_components = []
 
-            if self.args.n_gpu > 1:
-                loss = loss.mean()
-
-            self.accelerator.backward(loss)
-
+            # Call backward separately for each forward-pass component.
+            # With LoRA + DeepSpeed ZeRO-2 (overlap_comm=True), a single
+            # backward() through a combined loss that touches the same LoRA
+            # parameters in multiple forward-pass sub-graphs causes
+            # "gradient computed twice" assertion errors. Separate backward()
+            # calls reset params_already_reduced between each call.
             output_loss = loss.detach() / self.args.gradient_accumulation_steps
+            for component in backward_components:
+                if self.args.n_gpu > 1:
+                    component = component.mean()
+                self.accelerator.backward(component)
             return output_loss
         else:
             return super().training_step(model, inputs)
