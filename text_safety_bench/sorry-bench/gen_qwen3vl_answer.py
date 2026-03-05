@@ -10,7 +10,7 @@ import time
 import shortuuid
 import torch
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM, AutoProcessor
+from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
 
 
@@ -42,13 +42,11 @@ def run_eval(
         questions = [q for q in questions if q["question_id"] not in answered_ids]
         print(f"Remaining questions: {len(questions)}")
 
-    # Load model via trust_remote_code so the model's own class is used (Qwen3-VL has
-    # a different visual MLP architecture than Qwen2VL/Qwen2.5VL in transformers)
-    model = AutoModelForCausalLM.from_pretrained(
+    # Load model using the native Qwen3-VL class
+    model = Qwen3VLForConditionalGeneration.from_pretrained(
         model_path,
         torch_dtype=torch.bfloat16,
-        device_map="auto" if num_gpus > 1 else "cuda:0",
-        trust_remote_code=True
+        device_map="auto" if num_gpus > 1 else "cuda:0"
     )
     processor = AutoProcessor.from_pretrained(model_path)
 
