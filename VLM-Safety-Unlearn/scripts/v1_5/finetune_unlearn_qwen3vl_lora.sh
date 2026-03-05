@@ -20,7 +20,7 @@ deepspeed --master_port 29502 qwen3vl_train/train_unlearn.py \
     --tune_mm_vision False \
     --tune_mm_mlp False \
     --bf16 True \
-    --output_dir ./checkpoints/qwen3vl-unlearn-lora \
+    --output_dir ./checkpoints/qwen3vl-unlearn-lora-rmu \
     --group_by_modality_length True \
     --num_train_epochs 10 \
     --per_device_train_batch_size 2 \
@@ -39,7 +39,7 @@ deepspeed --master_port 29502 qwen3vl_train/train_unlearn.py \
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --report_to none \
-    --unlearn_type "npo" \
+    --unlearn_type "rmu" \
     --rmu_layer_id 15 \
     --rmu_steering_coeffs "10" \
     --rmu_llava_loss_weight 1.2 \

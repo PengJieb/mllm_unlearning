@@ -2,8 +2,8 @@
 
 # Qwen3-VL Sorry-Bench Evaluation Script
 export HOME=/playpen-shared/pengjie
-MODEL_PATH="Qwen/Qwen3-VL-2B-Instruct"
-MODEL_ID="qwen3-vl-2b"
+MODEL_PATH="VLM-Safety-Unlearn/checkpoints/qwen3vl-unlearn-lora-merged"
+MODEL_ID="qwen3-vl-2b-npo"
 GPU=1
 
 QUESTION_FILE="dataset/sorry_bench/question.jsonl"
