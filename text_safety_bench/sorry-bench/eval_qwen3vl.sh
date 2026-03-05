@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Qwen3-VL Sorry-Bench Evaluation Script
-
-MODEL_PATH=${1:-"Qwen/Qwen3-VL-8B-Instruct"}
-MODEL_ID=${2:-"qwen3-vl-8b"}
-GPU=${3:-0}
+export HOME=/playpen-shared/pengjie
+MODEL_PATH="Qwen/Qwen3-VL-2B-Instruct"
+MODEL_ID="qwen3-vl-2b"
+GPU=1
 
 QUESTION_FILE="dataset/sorry_bench/question.jsonl"
 ANSWER_FILE="dataset/sorry_bench/model_answer/${MODEL_ID}.jsonl"
