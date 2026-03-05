@@ -58,9 +58,9 @@ def main():
     )
     args = parser.parse_args()
     
-    question_file = f"data/{args.bench_name}/question.jsonl"
-    if args.data_mutation: answer_dir = f"data/{args.bench_name}/model_answer_{args.data_mutation}"
-    else: answer_dir = f"data/{args.bench_name}/model_answer"
+    question_file = f"../../dataset/{args.bench_name}/question.jsonl"
+    if args.data_mutation: answer_dir = f"../../dataset/{args.bench_name}/model_answer_{args.data_mutation}"
+    else: answer_dir = f"../../dataset/{args.bench_name}/model_answer"
 
     # Load questions
     questions = load_questions(question_file, None, None)

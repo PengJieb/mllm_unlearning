@@ -6,3 +6,4 @@ VLGuard/results
 text_safety_bench/HarmBench/data
 text_safety_bench/sorry-bench/data
 VLGuard/data/llava_v1_5_mix_clean.json
+text_safety_bench/sorry-bench/ckpts
