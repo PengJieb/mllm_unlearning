@@ -529,7 +529,7 @@ class Qwen3VLUnlearnTrainer(Trainer):
             return super().training_step(model, inputs)
 
     def compute_unlearn_loss(self, model: nn.Module, forget_batch: Dict[str, torch.Tensor]) -> torch.Tensor:
-        updated_forget_activations = self.forward_with_cache(model, forget_batch, module=self.updated_lora_modules, no_grad=False).to(self.model.device)
+        updated_forget_activations = self.forward_with_cache(model, forget_batch, module=self.updated_lora_modules, no_grad=False)
 
         batch_size, seq_len, _ = updated_forget_activations.shape
         expanded_control_vector = self.control_vector.to(updated_forget_activations.device).broadcast_to(batch_size, seq_len, -1)
@@ -538,8 +538,8 @@ class Qwen3VLUnlearnTrainer(Trainer):
         return unlearn_loss
 
     def compute_retain_loss(self, model: nn.Module, frozen_model: nn.Module, retain_batch: Dict[str, torch.Tensor]) -> torch.Tensor:
-        updated_retain_activations = self.forward_with_cache(model, retain_batch, module=self.updated_lora_modules, no_grad=False).to(self.model.device)
-        updated_forget_activations = self.forward_with_cache(frozen_model, retain_batch, module=self.frozen_lora_modules, no_grad=True).to(self.model.device)
+        updated_retain_activations = self.forward_with_cache(model, retain_batch, module=self.updated_lora_modules, no_grad=False)
+        updated_forget_activations = self.forward_with_cache(frozen_model, retain_batch, module=self.frozen_lora_modules, no_grad=True).to(updated_retain_activations.device)
 
         batch_size_retain, seq_len_retain, feature_dim_retain = updated_retain_activations.shape
         batch_size_forget, seq_len_forget, feature_dim_forget = updated_forget_activations.shape

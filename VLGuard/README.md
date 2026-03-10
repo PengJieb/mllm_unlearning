@@ -1,3 +1,11 @@
+<!--
+ * @Author: PengJie pengjieb@mail.ustc.edu.cn
+ * @Date: 2026-03-09 16:48:14
+ * @LastEditors: PengJie pengjieb@mail.ustc.edu.cn
+ * @LastEditTime: 2026-03-09 16:46:31
+ * @FilePath: /mllm_unlearning/VLGuard/README.md
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
 # VLGuard
 [[Website]](https://ys-zong.github.io/VLGuard/) [[Paper]](https://arxiv.org/abs/2402.02207) [[Data]](https://huggingface.co/datasets/ys-zong/VLGuard) [[🤗Weights]](https://huggingface.co/collections/ys-zong/vlguard-6671c22a97ffa934dd8fd520)
 
@@ -79,3 +87,14 @@ to convert VLGuard to LLaVA data format and follow their fine-tuning scripts to 
   year={2024}
 }
 ```
+
+
+vllm bench serve \
+  --backend openai-chat \
+  --endpoint /v1/chat/completions \
+  --model dataset/Qwen3.5-9B \
+  --dataset-name random \
+  --random-input-len 2048 \
+  --random-output-len 512 \
+  --num-prompts 1000 \
+  --request-rate 20
