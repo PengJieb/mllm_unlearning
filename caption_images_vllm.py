@@ -30,7 +30,7 @@ Describe this image in detail.
 
 def encode_image_base64(image: Image.Image, fmt: str = "JPEG") -> str:
     buf = BytesIO()
-    if image.mode in ("RGBA", "P"):
+    if image.mode not in ("RGB", "L"):
         image = image.convert("RGB")
     image.save(buf, format=fmt)
     return base64.b64encode(buf.getvalue()).decode("utf-8")
@@ -137,6 +137,19 @@ def load_llm(args) -> LLM:
     return LLM(**kwargs)
 
 
+def load_existing_captions(output_path: Path) -> dict[str, str]:
+    if not output_path.exists():
+        return {}
+
+    with open(output_path, "r", encoding="utf-8") as f:
+        existing_captions = json.load(f)
+
+    if not isinstance(existing_captions, dict):
+        raise ValueError(f"Existing output file must contain a JSON object: {output_path}")
+
+    return existing_captions
+
+
 def main():
     args = parse_args()
 
@@ -144,6 +157,20 @@ def main():
     if not image_paths:
         raise FileNotFoundError(f"No images found in: {args.image_dir}")
     print(f"Found {len(image_paths)} images in {args.image_dir}")
+
+    output_path = Path(args.output_file)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    captions = load_existing_captions(output_path)
+    pending_image_paths = [img_path for img_path in image_paths if img_path.name not in captions]
+
+    if captions:
+        print(f"Loaded {len(captions)} existing captions from {output_path}")
+    print(f"Skipping {len(image_paths) - len(pending_image_paths)} already-captioned images")
+
+    if not pending_image_paths:
+        print(f"All captions already exist in: {output_path}")
+        return
 
     llm = load_llm(args)
     # Recommended non-thinking (instruct) mode params per Qwen3.5 README
@@ -156,18 +183,13 @@ def main():
         presence_penalty=1.5,
     )
 
-    captions: dict[str, str] = {}
-
-    # Save results
-    output_path = Path(args.output_file)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
     # Process in batches
     for batch_start in tqdm(
-        range(0, len(image_paths), args.batch_size),
+        range(0, len(pending_image_paths), args.batch_size),
         desc="Captioning",
         unit="batch",
     ):
-        batch_paths = image_paths[batch_start : batch_start + args.batch_size]
+        batch_paths = pending_image_paths[batch_start : batch_start + args.batch_size]
         conversation_batch = []
         valid_paths = []
 

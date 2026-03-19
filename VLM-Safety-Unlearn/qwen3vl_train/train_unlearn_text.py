@@ -52,6 +52,11 @@ class DataArguments:
         metadata={"help": "Path to folder containing *_captions.json files. "
                            "Each file maps image filename to its text description."}
     )
+    max_train_samples: Optional[int] = field(
+        default=None,
+        metadata={"help": "Truncate each of retain and forget datasets to this many samples. "
+                           "Useful for fast validation runs."}
+    )
 
 
 @dataclass
@@ -186,10 +191,14 @@ def _get_description(captions: Dict[str, Dict[str, str]], image_path: str) -> Op
     if len(parts) != 2:
         return None
     subfolder, filename = parts
+    if subfolder == 'harm-p':
+        subfolder='harm_p'
+    # print(captions.keys(), filename, subfolder)
     subfolder_captions = captions.get(subfolder)
     if subfolder_captions is None:
         return None
-    return subfolder_captions.get(filename)
+    # print(subfolder_captions.get(filename))
+    return "Image caption: " + subfolder_captions.get(filename)
 
 
 def _build_messages_text(conversations, image_description: Optional[str] = None):
@@ -380,6 +389,10 @@ def make_supervised_data_module(processor, data_args) -> Dict:
 
     retain_dataset.list_data_dict = random.sample(retain_dataset.list_data_dict, len(retain_dataset.list_data_dict))
 
+    if data_args.max_train_samples is not None:
+        retain_dataset.list_data_dict = retain_dataset.list_data_dict[:data_args.max_train_samples]
+        forget_dataset.list_data_dict = forget_dataset.list_data_dict[:data_args.max_train_samples]
+
     data_collator = DataCollatorForQwen3VL(processor=processor)
     return dict(
         train_dataset=retain_dataset,
@@ -499,10 +512,12 @@ def train():
         if training_args.local_rank == 0 or training_args.local_rank == -1:
             model.config.save_pretrained(training_args.output_dir)
             model.save_pretrained(training_args.output_dir, state_dict=state_dict)
+            processor.save_pretrained(training_args.output_dir)
             torch.save(non_lora_state_dict, os.path.join(training_args.output_dir, 'non_lora_trainables.bin'))
     else:
         if training_args.local_rank == 0 or training_args.local_rank == -1:
             model.save_pretrained(training_args.output_dir)
+            processor.save_pretrained(training_args.output_dir)
 
 
 if __name__ == "__main__":

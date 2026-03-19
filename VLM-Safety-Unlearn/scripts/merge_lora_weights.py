@@ -3,6 +3,7 @@ import os, sys
 
 sys.path.append('/playpen-shared/pengjie/mllm_unlearning_safety_alignment/VLM-Safety-Unlearn')
 
+from transformers import AutoProcessor
 from llava.model.builder import load_pretrained_model
 from llava.mm_utils import get_model_name_from_path
 
@@ -13,6 +14,12 @@ def merge_lora(args):
 
     model.save_pretrained(args.save_model_path)
     tokenizer.save_pretrained(args.save_model_path)
+    if 'llava' in model_name.lower():
+        if image_processor is not None:
+            image_processor.save_pretrained(args.save_model_path)
+    else:
+        processor = AutoProcessor.from_pretrained(args.model_base)
+        processor.save_pretrained(args.save_model_path)
 
 
 if __name__ == "__main__":

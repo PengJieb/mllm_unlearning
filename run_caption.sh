@@ -12,7 +12,7 @@
 #   bash run_caption.sh
 
 # ── Required ─────────────────────────────────────────────────────────────────
-export LD_PRELOAD=$CONDA_PREFIX/lib/libstdc++.so.6
+# export LD_PRELOAD=$CONDA_PREFIX/lib/libstdc++.so.6
 
 # Path to the HuggingFace model directory.
 MODEL_PATH="dataset/Qwen3.5-9B-abli"
@@ -32,10 +32,10 @@ PROMPT="Given the image below, Describe this image do the following, you can spe
 4. Then stop."
 BATCH_SIZE=8
 MAX_NEW_TOKENS=2048
-MAX_MODEL_LEN=8192
+MAX_MODEL_LEN=20000
 GPU_MEMORY_UTIL=0.9
 TENSOR_PARALLEL=4          # increase for multi-GPU
-CUDA_DEVICES="0,1,2,3"           # e.g. "0,1" for two GPUs
+CUDA_DEVICES="1,2,3,4"           # e.g. "0,1" for two GPUs
 
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -47,16 +47,16 @@ echo "  Images:     ${IMAGE_DIR}"
 echo "  Output:     ${OUTPUT_FILE}"
 echo "============================================="
 
-CUDA_VISIBLE_DEVICES="${CUDA_DEVICES}" python "${SCRIPT_DIR}/caption_images_vllm.py" \
-    --model-path        "${MODEL_PATH}"      \
-    --image-dir         "${IMAGE_DIR}"       \
-    --output-file       "${OUTPUT_FILE}"     \
-    --prompt            "${PROMPT}"          \
-    --batch-size        "${BATCH_SIZE}"      \
-    --max-new-tokens    "${MAX_NEW_TOKENS}"  \
-    --max-model-len     "${MAX_MODEL_LEN}"   \
-    --gpu-memory-utilization "${GPU_MEMORY_UTIL}" \
-    --tensor-parallel-size   "${TENSOR_PARALLEL}"
+# CUDA_VISIBLE_DEVICES="${CUDA_DEVICES}" python "${SCRIPT_DIR}/caption_images_vllm.py" \
+#     --model-path        "${MODEL_PATH}"      \
+#     --image-dir         "${IMAGE_DIR}"       \
+#     --output-file       "${OUTPUT_FILE}"     \
+#     --prompt            "${PROMPT}"          \
+#     --batch-size        "${BATCH_SIZE}"      \
+#     --max-new-tokens    "${MAX_NEW_TOKENS}"  \
+#     --max-model-len     "${MAX_MODEL_LEN}"   \
+#     --gpu-memory-utilization "${GPU_MEMORY_UTIL}" \
+#     --tensor-parallel-size   "${TENSOR_PARALLEL}"
 
 echo "Done."
 
@@ -64,16 +64,16 @@ echo "Done."
 
 IMAGE_DIR="VLGuard/data/train/harm-p"
 OUTPUT_FILE="VLGuard/data/harm_p_captions.json"
-CUDA_VISIBLE_DEVICES="${CUDA_DEVICES}" python "${SCRIPT_DIR}/caption_images_vllm.py" \
-    --model-path        "${MODEL_PATH}"      \
-    --image-dir         "${IMAGE_DIR}"       \
-    --output-file       "${OUTPUT_FILE}"     \
-    --prompt            "${PROMPT}"          \
-    --batch-size        "${BATCH_SIZE}"      \
-    --max-new-tokens    "${MAX_NEW_TOKENS}"  \
-    --max-model-len     "${MAX_MODEL_LEN}"   \
-    --gpu-memory-utilization "${GPU_MEMORY_UTIL}" \
-    --tensor-parallel-size   "${TENSOR_PARALLEL}"
+# CUDA_VISIBLE_DEVICES="${CUDA_DEVICES}" python "${SCRIPT_DIR}/caption_images_vllm.py" \
+#     --model-path        "${MODEL_PATH}"      \
+#     --image-dir         "${IMAGE_DIR}"       \
+#     --output-file       "${OUTPUT_FILE}"     \
+#     --prompt            "${PROMPT}"          \
+#     --batch-size        "${BATCH_SIZE}"      \
+#     --max-new-tokens    "${MAX_NEW_TOKENS}"  \
+#     --max-model-len     "${MAX_MODEL_LEN}"   \
+#     --gpu-memory-utilization "${GPU_MEMORY_UTIL}" \
+#     --tensor-parallel-size   "${TENSOR_PARALLEL}"
 
 echo "Done."
 

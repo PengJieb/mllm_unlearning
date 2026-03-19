@@ -8,7 +8,7 @@
  # @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 ### 
 
-export CUDA_VISIBLE_DEVICES=0,1,2,3
+export CUDA_VISIBLE_DEVICES=1,2,3,4
 export HOME=/playpen-shared/pengjie
 export NCCL_P2P_DISABLE=1
 PROJ_ROOT="$PWD"

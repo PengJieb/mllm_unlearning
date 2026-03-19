@@ -10,3 +10,7 @@ text_safety_bench/sorry-bench/ckpts
 **/__pycache__
 *.pyc
 VLM-Safety-Unlearn/checkpoints
+results/*
+Qwen3.5-9B-abli
+**/__pycache__/
+*.pyc

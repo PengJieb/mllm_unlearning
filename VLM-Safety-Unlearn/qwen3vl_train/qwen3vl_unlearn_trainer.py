@@ -247,7 +247,7 @@ class Qwen3VLUnlearnTrainer(Trainer):
                 lengths=lengths,
                 group_by_modality=True,
             )
-        if self.args.group_by_length:
+        if getattr(self.args, 'group_by_length', False):
             if is_datasets_available() and isinstance(train_dataset, datasets.Dataset):
                 lengths = (
                     train_dataset[self.args.length_column_name]
@@ -510,8 +510,124 @@ class Qwen3VLUnlearnTrainer(Trainer):
                 if self.args.verbose:
                     print(f"Step {self.state.global_step}: Total Loss={loss}, Standard Loss={llava_loss}, Unlearn PO Loss={forget_npo_loss}, Retain PO Loss={retain_npo_loss}")
 
+            elif self.args.unlearn_type == "dpo":
+                # DPO uses the same NPO-style log-ratio loss with the npo_* args.
+                npo_loss = torch.tensor(0.0, device=model.device)
+                frozen_model = self.frozen_acc_model
+
+                try:
+                    forget_batch = next(self.forget_iterators[0])
+                    forget_inputs = self._prepare_inputs(forget_batch)
+                    forget_inputs = self._safe_to_device(forget_inputs, model.device)
+
+                    prepared_forget_inputs = self._prepare_inputs(forget_inputs)
+
+                    forget_loss_current = self.compute_loss(model, prepared_forget_inputs)
+
+                    with torch.no_grad():
+                        forget_loss_oracle = self.compute_loss(frozen_model, prepared_forget_inputs)
+
+                    neg_log_ratios = forget_loss_current - forget_loss_oracle
+
+                    forget_npo_loss = self.args.npo_forget_alpha * (-F.logsigmoid(self.args.npo_beta * neg_log_ratios).mean() * 2 / self.args.npo_beta)
+                    retain_npo_loss = torch.tensor(0.0, device=model.device)
+
+                    if self.args.npo_retain_alpha != 0:
+                        retain_batch = next(self.retain_iterators[0])
+                        retain_inputs = self._prepare_inputs(retain_batch)
+                        retain_inputs = self._safe_to_device(retain_inputs, model.device)
+
+                        prepared_retain_inputs = self._prepare_inputs(retain_inputs)
+
+                        retain_loss_current = self.compute_loss(model, prepared_retain_inputs)
+
+                        with torch.no_grad():
+                            retain_loss_oracle = self.compute_loss(frozen_model, prepared_retain_inputs)
+
+                        retain_neg_log_ratios = retain_loss_current - retain_loss_oracle
+
+                        retain_npo_loss = self.args.npo_retain_alpha * (F.logsigmoid(self.args.npo_beta * retain_neg_log_ratios).mean() * 2 / self.args.npo_beta)
+
+                except StopIteration:
+                    logger.info("forget_dataloader or retain_dataloader exhausted. Resetting iterators.")
+                    self.forget_iterators = [iter(dl) for dl in self.forget_dataloaders]
+
+                    if self.args.npo_retain_alpha != 0:
+                        self.retain_iterators = [iter(dl) for dl in self.retain_dataloaders]
+
+                    try:
+                        forget_batch = next(self.forget_iterators[0])
+                        forget_inputs = self._prepare_inputs(forget_batch)
+                        forget_inputs = self._safe_to_device(forget_inputs, model.device)
+
+                        prepared_forget_inputs = self._prepare_inputs(forget_inputs)
+
+                        forget_loss_current = self.compute_loss(model, prepared_forget_inputs)
+
+                        with torch.no_grad():
+                            forget_loss_oracle = self.compute_loss(frozen_model, prepared_forget_inputs)
+
+                        neg_log_ratios = forget_loss_current - forget_loss_oracle
+
+                        forget_npo_loss = self.args.npo_forget_alpha * (-F.logsigmoid(self.args.npo_beta * neg_log_ratios).mean() * 2 / self.args.npo_beta)
+                        retain_npo_loss = torch.tensor(0.0, device=model.device)
+
+                        if self.args.npo_retain_alpha != 0:
+                            retain_batch = next(self.retain_iterators[0])
+                            retain_inputs = self._prepare_inputs(retain_batch)
+                            retain_inputs = self._safe_to_device(retain_inputs, model.device)
+
+                            prepared_retain_inputs = self._prepare_inputs(retain_inputs)
+
+                            retain_loss_current = self.compute_loss(model, prepared_retain_inputs)
+
+                            with torch.no_grad():
+                                retain_loss_oracle = self.compute_loss(frozen_model, prepared_retain_inputs)
+
+                            retain_neg_log_ratios = retain_loss_current - retain_loss_oracle
+
+                            retain_npo_loss = self.args.npo_retain_alpha * (F.logsigmoid(self.args.npo_beta * retain_neg_log_ratios).mean() * 2 / self.args.npo_beta)
+
+                    except StopIteration:
+                        logger.warning("After resetting, dataloader is still exhausted. Skipping loss computation.")
+                        return torch.tensor(0.0, device=model.device)
+
+                # Calculate standard loss
+                inputs = self._prepare_inputs(inputs)
+                llava_loss = self.compute_loss(model, inputs)
+                npo_loss = forget_npo_loss + retain_npo_loss
+
+                loss = npo_loss + self.args.npo_llava_loss_weight * llava_loss
+
+                backward_components = [forget_npo_loss]
+                if self.args.npo_retain_alpha != 0:
+                    backward_components.append(retain_npo_loss)
+                if self.args.npo_llava_loss_weight != 0:
+                    backward_components.append(self.args.npo_llava_loss_weight * llava_loss)
+
+                if self.loss_dir:
+                    loss_entry = {
+                        "step": self.state.global_step,
+                        "loss": loss.item(),
+                        "llava_loss": llava_loss.item(),
+                        "forget_po_loss": forget_npo_loss.item(),
+                        "retain_po_loss": retain_npo_loss.item(),
+                        "learning_rate": self._get_learning_rate(),
+                        "epoch": self.state.epoch
+                    }
+                    try:
+                        with open(self.loss_file_path, 'a') as f:
+                            f.write(json.dumps(loss_entry) + '\n\n')
+                    except Exception as e:
+                        logger.error(f"Failed to write loss entry to {self.loss_file_path}: {e}")
+
+                if self.args.verbose:
+                    print(f"Step {self.state.global_step}: Total Loss={loss}, Standard Loss={llava_loss}, Unlearn PO Loss={forget_npo_loss}, Retain PO Loss={retain_npo_loss}")
+
             elif self.args.unlearn_type == "grad-diff":
-                backward_components = []
+                inputs = self._prepare_inputs(inputs)
+                loss = self.compute_loss(model, inputs)
+                backward_components = [loss]
 
             # Call backward separately for each forward-pass component.
             # With LoRA + DeepSpeed ZeRO-2 (overlap_comm=True), a single
